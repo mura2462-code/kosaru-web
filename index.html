@@ -262,6 +262,8 @@ function fmtDate(ev) {
 }
 function yen(n) { return String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '円'; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+// 台帳から来る文（会場名・備考・支払方法など）は budoux を通っていないので、句読点の後と開き括弧の前に折返し許可点を置く
+function escw(s) { return esc(s).replace(/([。、．，])/g, '$1').replace(/([（(「『【])/g, '$1'); }
 
 function api(params) {
   var u = CONFIG.ENDPOINT + (CONFIG.ENDPOINT.indexOf('?') >= 0 ? '&' : '?') + params;
@@ -289,12 +291,12 @@ function renderEvents() {
       '<div>' +
         '<div class="date">' + esc(fmtDate(ev)) + '</div>' +
         '<div class="meta">' +
-          '<div>会場：' + (ev.venueUrl ? '<a href="' + esc(ev.venueUrl) + '" target="_blank" rel="noopener">' + esc(ev.venue) + '</a>' : esc(ev.venue)) + '</div>' +
-          '<div>参加費：' + esc(yen(ev.fee)) + (ev.feeNote ? '（' + esc(ev.feeNote) + '）' : '') + '</div>' +
-          (ev.payNote ? '<div>支払い<wbr>：' + esc(ev.payNote) + '</div>' : '') +
+          '<div>会場：' + (ev.venueUrl ? '<a href="' + esc(ev.venueUrl) + '" target="_blank" rel="noopener">' + escw(ev.venue) + '</a>' : escw(ev.venue)) + '</div>' +
+          '<div>参加費：' + esc(yen(ev.fee)) + (ev.feeNote ? '（' + escw(ev.feeNote) + '）' : '') + '</div>' +
+          (ev.payNote ? '<div>支払い<wbr>：' + escw(ev.payNote) + '</div>' : '') +
         '</div>' +
         '<div class="seat ' + s.cls + '">' + esc(s.text) + '</div>' +
-        (ev.note ? '<div class="note">' + esc(ev.note) + '</div>' : '') +
+        (ev.note ? '<div class="note">' + escw(ev.note) + '</div>' : '') +
       '</div>' +
       '<div>' + (s.can ? '<button class="btn' + (s.wait ? ' sub' : '') + '" data-id="' + esc(ev.id) + '">' + (s.wait ? 'キャンセル待ちで申し込む' : '申し込む') + '</button>' : '') + '</div>' +
     '</div>';
@@ -321,7 +323,7 @@ function openForm(id) {
   state.selected = ev;
   state.shownAt = Date.now();
   var s = seatLabel(ev);
-  $('#f-sum').innerHTML = '<b>' + esc(fmtDate(ev)) + '</b>' + esc(ev.venue) + '　参加費 ' + esc(yen(ev.fee)) + (ev.feeNote ? '（' + esc(ev.feeNote) + '）' : '') +
+  $('#f-sum').innerHTML = '<b>' + esc(fmtDate(ev)) + '</b>' + escw(ev.venue) + '　参加費 ' + esc(yen(ev.fee)) + (ev.feeNote ? '（' + escw(ev.feeNote) + '）' : '') +
     (s.wait ? '<div class="small" style="color:var(--warn-ink)">満員の<wbr>ためキャンセル待ちでの<wbr>受付です。<wbr>空きが<wbr>出たら<wbr>メールで<wbr>連絡します。</div>' : '');
   $('#f-msg').innerHTML = '';
   $('#f-submit').textContent = s.wait ? 'キャンセル待ちで申し込む' : 'この内容で申し込む';
@@ -367,7 +369,7 @@ $('#form').addEventListener('submit', function (e) {
     if (!r.no) throw new Error('server'); // スパム判定で落ちた場合は {ok:true} だけが返る。人には「送れなかった」と見せて再送を促す
     $('#d-title').textContent = r.status === 'waitlist' ? 'キャンセル待ちで受け付けました' : 'お申込みを受け付けました';
     $('#d-no').textContent = r.no;
-    $('#d-body').innerHTML = '<div>' + esc(fmtDate(ev)) + '</div><div>' + esc(ev.venue) + '</div><div>参加費 ' + esc(yen(ev.fee)) + '</div>' + (ev.payNote ? '<div>支払い<wbr>：' + esc(ev.payNote) + '</div>' : '') +
+    $('#d-body').innerHTML = '<div>' + esc(fmtDate(ev)) + '</div><div>' + escw(ev.venue) + '</div><div>参加費 ' + esc(yen(ev.fee)) + '</div>' + (ev.payNote ? '<div>支払い<wbr>：' + escw(ev.payNote) + '</div>' : '') +
       (r.status === 'waitlist' ? '<div class="msg ok">空きが<wbr>出たら、<wbr>受付順に<wbr>メールで<wbr>連絡します。<wbr>連絡が<wbr>届いた<wbr>時点で<wbr>参加確定です。</div>' : '<div class="msg ok">参加確定です。<wbr>前日に<wbr>リマインドの<wbr>メールを<wbr>送ります。</div>');
     $('#form').reset();
     show('view-done');
@@ -392,7 +394,7 @@ function openCancel(token) {
     card.innerHTML =
       '<div class="small">申込番号</div><div class="no">' + esc(b.no) + '</div>' +
       '<div>' + esc(b.name) + ' 様　' + (b.status === 'waitlist' ? '（キャンセル待ち）' : '（参加確定）') + '</div>' +
-      (ev ? '<div>' + esc(fmtDate(ev)) + '</div><div>' + esc(ev.venue) + '</div>' + (ev.cancelNote ? '<div class="msg warn">' + esc(ev.cancelNote) + '</div>' : '') : '') +
+      (ev ? '<div>' + esc(fmtDate(ev)) + '</div><div>' + escw(ev.venue) + '</div>' + (ev.cancelNote ? '<div class="msg warn">' + escw(ev.cancelNote) + '</div>' : '') : '') +
       '<div id="c-msg"></div>' +
       '<button class="btn block" id="c-do">この<wbr>申込を<wbr>キャンセルする</button>';
     $('#c-do').addEventListener('click', function () {
