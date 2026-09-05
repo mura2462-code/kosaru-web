@@ -263,7 +263,8 @@ function fmtDate(ev) {
 function yen(n) { return String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '円'; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 // 台帳から来る文（会場名・備考・支払方法など）は budoux を通っていないので、句読点の後と開き括弧の前に折返し許可点を置く
-function escw(s) { return esc(s).replace(/([。、．，])/g, '$1').replace(/([（(「『【])/g, '$1'); }
+var W = '<' + 'wbr>'; // jp-wrap が既存の  を消して引き直すため、文字列として組み立てる
+function escw(s) { return esc(s).replace(/([。、．，])/g, '$1' + W).replace(/([（(「『【])/g, W + '$1'); }
 
 function api(params) {
   var u = CONFIG.ENDPOINT + (CONFIG.ENDPOINT.indexOf('?') >= 0 ? '&' : '?') + params;
