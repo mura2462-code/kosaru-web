@@ -290,7 +290,8 @@ function renderEvents() {
         '<div class="date">' + esc(fmtDate(ev)) + '</div>' +
         '<div class="meta">' +
           '<div>会場：' + (ev.venueUrl ? '<a href="' + esc(ev.venueUrl) + '" target="_blank" rel="noopener">' + esc(ev.venue) + '</a>' : esc(ev.venue)) + '</div>' +
-          '<div>参加費：' + esc(yen(ev.fee)) + (ev.feeNote ? '（' + esc(ev.feeNote) + '）' : '') + (ev.payNote ? '　' + esc(ev.payNote) : '') + '</div>' +
+          '<div>参加費：' + esc(yen(ev.fee)) + (ev.feeNote ? '（' + esc(ev.feeNote) + '）' : '') + '</div>' +
+          (ev.payNote ? '<div>支払い<wbr>：' + esc(ev.payNote) + '</div>' : '') +
         '</div>' +
         '<div class="seat ' + s.cls + '">' + esc(s.text) + '</div>' +
         (ev.note ? '<div class="note">' + esc(ev.note) + '</div>' : '') +
@@ -366,7 +367,7 @@ $('#form').addEventListener('submit', function (e) {
     if (!r.no) throw new Error('server'); // スパム判定で落ちた場合は {ok:true} だけが返る。人には「送れなかった」と見せて再送を促す
     $('#d-title').textContent = r.status === 'waitlist' ? 'キャンセル待ちで受け付けました' : 'お申込みを受け付けました';
     $('#d-no').textContent = r.no;
-    $('#d-body').innerHTML = '<div>' + esc(fmtDate(ev)) + '</div><div>' + esc(ev.venue) + '</div><div>参加費 ' + esc(yen(ev.fee)) + (ev.payNote ? '　' + esc(ev.payNote) : '') + '</div>' +
+    $('#d-body').innerHTML = '<div>' + esc(fmtDate(ev)) + '</div><div>' + esc(ev.venue) + '</div><div>参加費 ' + esc(yen(ev.fee)) + '</div>' + (ev.payNote ? '<div>支払い<wbr>：' + esc(ev.payNote) + '</div>' : '') +
       (r.status === 'waitlist' ? '<div class="msg ok">空きが<wbr>出たら、<wbr>受付順に<wbr>メールで<wbr>連絡します。<wbr>連絡が<wbr>届いた<wbr>時点で<wbr>参加確定です。</div>' : '<div class="msg ok">参加確定です。<wbr>前日に<wbr>リマインドの<wbr>メールを<wbr>送ります。</div>');
     $('#form').reset();
     show('view-done');
