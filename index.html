@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>個人参加フットサル 申込</title>
+<style>
+/* == jp-typo:start == 日本語改行の基盤（jp_typo/typo.css が正本。直接編集しない） */
+/* ============================================================
+   日本語改行の基盤スタイル（全案件共通・正本）
+   /Users/mura2462/daily-content-auto/jp_typo/typo.css
+   これを編集したら jp-wrap --sync-all で各案件へ再配布する。
+
+   前提となる実測事実（MDN browser-compat-data / 2026-08-20 確認）:
+     word-break:auto-phrase … Chrome119+ のみ。Safari は preview、Firefox 非対応。
+                              しかも lang="ja" が要る。→ iPhone では効かない。
+     text-wrap:pretty       … Chrome130+ / Safari26+ / Firefox 非対応
+     text-wrap:balance      … Chrome130+ / Safari17.5+ / Firefox124+
+                       … Chrome1 / Safari4 / Firefox1 = 全ブラウザ確実
+   よって「文節で折り返す」実体は （budoux が本文に埋め込む）が担い、
+   CSS は「wbr 以外の位置で切らせない」ことを担当する二段構えにする。
+   ============================================================ */
+
+/* 折り返し規則。詳細度0（:where）で全要素に敷く。
+   要素を列挙する方式だと div 直下のテキストが漏れて、そこだけ改行規則が変わる。
+   word-break 系は継承プロパティだが、途中の要素に直接指定があると継承が切れるため、
+   html への一括指定ではなく全要素へ当てる必要がある。
+   詳細度0なので、既存のページ側指定は一切上書きされない＝後方互換。 */
+:where(body, body *){
+  line-break: strict;        /* 行頭の句読点・閉じ括弧・小書き仮名を禁止（禁則） */
+  word-break: keep-all;      /* 日本語を任意位置で切らせない＝wbr の位置だけで折る */
+  overflow-wrap: break-word; /* 安全網。ただし anywhere と違い「文節が行に収まらない時」だけ切る。
+                                anywhere は改行機会を同格に扱うため貪欲に詰めて文節を割ってしまう */
+  text-wrap: pretty;         /* 対応環境では最終行1文字の孤立（рагged）を回避 */
+}
+
+/* 見出し・キャッチは行の長さを揃える（対応環境のみ。非対応でも劣化しない） */
+:where(h1,h2,h3,.lead,.catch,.hero h1,.jp-balance){
+  text-wrap: balance;
+}
+
+/* word-break:auto-phrase はあえて使わない。
+   Chrome 以外では無効なうえ、Chrome でも lang="ja" が無いと normal（＝どこでも切る）に
+   落ちる。ブラウザによって改行位置が変わる状態を作らないため、判断は budoux が埋めた
+    に一本化する。 */
+
+/* 行長（measure）。日本語は1行あたり全角35〜45字が可読のピーク。
+   PC幅で1行が伸びきるのを防ぐ。opt-in（.jp-measure）＋本文既定の両方を用意。 */
+.jp-measure{ max-width: 40em; }
+.jp-measure-center{ max-width: 40em; margin-inline: auto; }
+
+/* デバイス別の明示改行。使うのは「意味の切れ目をどうしても固定したい」時だけ。
+   .br-sp = スマホでのみ改行 / .br-tb = タブレットのみ / .br-pc = PCのみ
+   .sp-br / .pc-br は既存ページの旧クラス名との互換 */
+.br-sp,.sp-br,.br-tb,.br-pc,.pc-br{ display:none; }
+@media (max-width: 599px){  .br-sp,.sp-br{ display:inline; } }
+@media (min-width: 600px) and (max-width: 1023px){ .br-tb{ display:inline; } }
+@media (min-width: 1024px){ .br-pc,.pc-br{ display:inline; } }
+
+/* 逆に「その幅では改行させたくない」ときの打ち消し */
+@media (max-width: 599px){ .nobr-sp{ display:none; } }
+@media (min-width: 1024px){ .nobr-pc{ display:none; } }
+
+/* 電話番号のように途中で切られると意味が壊れるものは切らせない */
+.jp-nowrap,:where(a[href^="tel:"],.tel,.phone,.no-break){ white-space: nowrap; }
+
+/* 逆にメールアドレス・URL は長いので、どこで切ってでも溢れさせない */
+:where(a[href^="mailto:"],a[href^="http"],.jp-break,code,kbd,samp){ overflow-wrap: anywhere; }
+
+/* 数字＋単位・記号の分断防止（例: 500 件, 8:00〜20:00） */
+.jp-unit{ white-space: nowrap; }
+
+/* == jp-typo:end == */
+
+:root{
+  --ink:#1c2420;
+  --muted:#5a6660;
+  --green:#0f5132;
+  --green-dark:#0a3a24;
+  --line:#d3dad6;
+  --bg:#f4f6f5;
+  --card:#ffffff;
+  --warn-ink:#7a3b00;
+  --warn-bg:#fff4e8;
+  --err-ink:#8a1c1c;
+  --err-bg:#fdecec;
+  --ok-bg:#e9f4ee;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;font-size:16px;line-height:1.7;overflow-wrap:anywhere}
+a{color:var(--green)}
+header{background:var(--green);color:#fff;padding:20px 16px}
+header .in{max-width:640px;margin:0 auto}
+header h1{margin:0;font-size:20px;line-height:1.4;font-weight:700}
+header p{margin:6px 0 0;font-size:14px;opacity:.95}
+main{max-width:640px;margin:0 auto;padding:16px 16px 56px}
+h2{font-size:17px;margin:24px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin:0 0 12px}
+.ev{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:start}
+.ev .date{font-size:18px;font-weight:700;line-height:1.35}
+.ev .meta{font-size:14px;color:var(--muted);margin-top:4px}
+.ev .meta div{margin-top:2px}
+.ev .seat{font-size:14px;font-weight:700;margin-top:8px}
+.ev .seat.none{color:var(--muted)}
+.ev .note{font-size:14px;margin-top:10px;white-space:pre-line}
+.btn{display:inline-block;border:0;border-radius:8px;padding:12px 18px;font-size:16px;font-weight:700;cursor:pointer;background:var(--green);color:#fff;text-decoration:none;line-height:1.3;min-height:44px}
+.btn:hover{background:var(--green-dark)}
+.btn:disabled{background:#9aa6a0;cursor:default}
+.btn.sub{background:#fff;color:var(--green);border:2px solid var(--green)}
+.btn.sub:hover{background:var(--ok-bg)}
+.btn.block{display:block;width:100%;text-align:center;padding:14px 18px}
+.hidden{display:none!important}
+label.f{display:block;margin:14px 0 4px;font-weight:700;font-size:15px}
+label.f .req{color:var(--err-ink);font-size:12px;margin-left:6px;font-weight:700}
+label.f .opt{color:var(--muted);font-size:12px;margin-left:6px;font-weight:400}
+input[type=text],input[type=email],input[type=tel],textarea{width:100%;font:inherit;padding:11px 12px;border:1px solid #8b958f;border-radius:8px;background:#fff;color:var(--ink)}
+input:focus,textarea:focus{outline:3px solid #7fbf9a;outline-offset:1px}
+textarea{min-height:88px;resize:vertical}
+.choices{display:flex;flex-wrap:wrap;gap:8px}
+.choices label{display:flex;align-items:center;gap:8px;border:1px solid #8b958f;border-radius:8px;padding:10px 12px;background:#fff;cursor:pointer;min-height:44px;font-size:15px}
+.choices input{width:20px;height:20px;margin:0;accent-color:var(--green)}
+.choices label:has(input:checked){border-color:var(--green);background:var(--ok-bg);border-width:2px;padding:9px 11px}
+.terms{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:#fbfcfb;font-size:14px;max-height:220px;overflow:auto}
+.terms ol{margin:0;padding-left:20px}
+.terms li{margin:4px 0}
+.agree{display:flex;align-items:flex-start;gap:10px;margin:12px 0;font-size:15px;cursor:pointer}
+.agree input{width:22px;height:22px;margin:3px 0 0;flex:none;accent-color:var(--green)}
+.msg{border-radius:8px;padding:12px 14px;margin:12px 0;font-size:15px}
+.msg.err{background:var(--err-bg);color:var(--err-ink);border:1px solid #e3b1b1}
+.msg.warn{background:var(--warn-bg);color:var(--warn-ink);border:1px solid #efc89e}
+.msg.ok{background:var(--ok-bg);color:var(--green-dark);border:1px solid #b6d9c4}
+.sum{background:var(--ok-bg);border-radius:8px;padding:12px 14px;margin:0 0 6px;font-size:15px}
+.sum b{display:block;font-size:17px}
+.no{font-size:26px;font-weight:700;letter-spacing:.02em;margin:6px 0}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.loading{color:var(--muted);font-size:15px;padding:8px 0}
+.small{font-size:13px;color:var(--muted)}
+footer{max-width:640px;margin:0 auto;padding:0 16px 32px;font-size:13px;color:var(--muted)}
+@media (max-width:420px){.ev{grid-template-columns:1fr}.ev .btn{width:100%;text-align:center}}
+</style>
+</head>
+<body>
+<header><div class="in">
+  <h1 id="brand">個人参加フットサル</h1>
+  <p>ひとりでも<wbr>参加できる<wbr>フットサルです。<wbr>当日<wbr>その場で<wbr>チームを<wbr>分けて、<wbr>試合を<wbr>回します。</p>
+</div></header>
+
+<main>
+  <!-- 一覧 -->
+  <section id="view-list">
+    <h2>開催予定</h2>
+    <div id="events"><div class="loading">開催予定を<wbr>読み込んでいます…</div></div>
+    <p class="small">申込後に<wbr>届く<wbr>メールから、<wbr>開催前なら<wbr>いつでも<wbr>キャンセル<wbr>できます。</p>
+  </section>
+
+  <!-- 申込フォーム -->
+  <section id="view-form" class="hidden">
+    <h2>お申込み</h2>
+    <div class="sum" id="f-sum"></div>
+    <form id="form" novalidate>
+      <div class="hp" aria-hidden="true"><label>会社名 <input type="text" name="company" tabindex="-1" autocomplete="off"></label></div>
+
+      <label class="f" for="f-name">お名前<span class="req">必須</span></label>
+      <input type="text" id="f-name" name="name" autocomplete="name" maxlength="60" placeholder="例：山田 太郎">
+
+      <label class="f">性別<span class="opt">任意</span></label>
+      <div class="choices" id="f-gender">
+        <label><input type="radio" name="gender" value="male">男性</label>
+        <label><input type="radio" name="gender" value="female">女性</label>
+        <label><input type="radio" name="gender" value="other">回答しない</label>
+      </div>
+
+      <label class="f">フットサル・<wbr>サッカーの<wbr>経験<span class="req">必須</span></label>
+      <div class="choices" id="f-level">
+        <label><input type="radio" name="level" value="beginner">初心者<wbr>（経験ほぼなし）</label>
+        <label><input type="radio" name="level" value="casual">エンジョイ<wbr>（たまに<wbr>蹴る）</label>
+        <label><input type="radio" name="level" value="experienced">経験者<wbr>（部活・<wbr>サークル・<wbr>チーム歴あり）</label>
+      </div>
+      <p class="small">チーム分けの<wbr>参考にします。<wbr>レベルで<wbr>参加を<wbr>お断りする<wbr>ことは<wbr>ありません。</p>
+
+      <label class="f" for="f-email">メールアドレス<span class="req">必須</span></label>
+      <input type="email" id="f-email" name="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="受付メールとキャンセル用URLを送ります">
+
+      <label class="f" for="f-tel">電話番号<span class="opt">任意</span></label>
+      <input type="tel" id="f-tel" name="tel" autocomplete="tel" inputmode="tel" maxlength="40" placeholder="当日の急ぎの連絡にだけ使います">
+
+      <label class="f" for="f-note">主催者への<wbr>連絡<span class="opt">任意</span></label>
+      <textarea id="f-note" name="note" maxlength="500" placeholder="例：友人と2人で申し込みます／21時までに帰ります"></textarea>
+
+      <label class="f">参加に<wbr>あたっての<wbr>確認事項<span class="req">必須</span></label>
+      <div class="terms" id="terms">
+        <ol>
+          <li>フットサルは<wbr>接触や<wbr>転倒を<wbr>伴う<wbr>運動です。<wbr>自身の<wbr>体調・<wbr>体力を<wbr>確認したうえで<wbr>参加します。</li>
+          <li>参加中の<wbr>怪我・<wbr>事故・<wbr>体調不良に<wbr>ついては、<wbr>主催者の<wbr>故意または<wbr>重大な<wbr>過失に<wbr>よる<wbr>場合を<wbr>除き、<wbr>自身の<wbr>責任で<wbr>対処します。<wbr>必要に<wbr>応じて<wbr>自身で<wbr>保険に<wbr>加入します。</li>
+          <li>施設の<wbr>利用規則および主催者の<wbr>指示に<wbr>従います。<wbr>危険な<wbr>プレー・<wbr>暴言・<wbr>他の<wbr>参加者への<wbr>迷惑行為が<wbr>あった<wbr>場合は<wbr>退場を<wbr>お願いする<wbr>ことが<wbr>あり、<wbr>その<wbr>際の<wbr>参加費は<wbr>返金しません。</li>
+          <li>貴重品は<wbr>各自で<wbr>管理します。<wbr>盗難・<wbr>紛失に<wbr>ついて<wbr>主催者は<wbr>責任を<wbr>負いません。</li>
+          <li>参加費は<wbr>当日、<wbr>会場で<wbr>支払います。<wbr>参加者が<wbr>少ない<wbr>場合は<wbr>開催を<wbr>中止する<wbr>ことが<wbr>あり、<wbr>その<wbr>場合は<wbr>登録した<wbr>メールアドレスへ<wbr>事前に<wbr>連絡します。</li>
+          <li>入力した<wbr>個人情報は、<wbr>本イベントの<wbr>運営連絡<wbr>（受付・<wbr>リマインド・<wbr>中止連絡）<wbr>にのみ<wbr>使い、<wbr>第三者には<wbr>提供しません。</li>
+        </ol>
+      </div>
+      <label class="agree"><input type="checkbox" id="f-consent"><span>上の<wbr>確認事項を<wbr>読み、<wbr>同意します</span></label>
+      <label class="agree"><input type="checkbox" id="f-photo"><span>活動中の<wbr>写真・<wbr>動画を、<wbr>告知<wbr>（掲示板や<wbr>SNS）<wbr>に<wbr>使ってよい<span class="small">（任意。<wbr>顔が<wbr>大きく<wbr>写る<wbr>ものは<wbr>使いません）</span></span></label>
+
+      <div id="f-msg"></div>
+      <button type="submit" class="btn block" id="f-submit">この<wbr>内容で<wbr>申し込む</button>
+      <p style="text-align:center;margin-top:12px"><a href="#" id="f-back">開催予定にも<wbr>どる</a></p>
+    </form>
+  </section>
+
+  <!-- 完了 -->
+  <section id="view-done" class="hidden">
+    <h2 id="d-title">お申込みを<wbr>受け付けました</h2>
+    <div class="card">
+      <div class="small">申込番号</div>
+      <div class="no" id="d-no"></div>
+      <div id="d-body"></div>
+      <div class="msg warn">受付メールを<wbr>送りました。<wbr>届かない<wbr>場合は、<wbr>迷惑メールフォルダを<wbr>確認して<wbr>ください。<wbr>キャンセルは<wbr>メール内の<wbr>URLから<wbr>できます。</div>
+    </div>
+    <p><a href="#" id="d-back">開催予定にも<wbr>どる</a></p>
+  </section>
+
+  <!-- キャンセル -->
+  <section id="view-cancel" class="hidden">
+    <h2>キャンセル</h2>
+    <div class="card" id="c-card"><div class="loading">お申込みを<wbr>確認しています…</div></div>
+    <p><a href="./" id="c-back">開催予定を<wbr>見る</a></p>
+  </section>
+</main>
+<footer><span id="brand2">個人参加フットサル</span></footer>
+
+<script>
+var CONFIG = { BRAND: '個人参加フットサル', ENDPOINT: 'https://script.google.com/macros/s/AKfycbwPl-RCT5gUtV-tG6V0JOy8nHOZnk5qdDHA10krh_dpPcoUvBZa_f2oia-cwyvHZ8se/exec', KEY: '1qZcSCIfcLjVZzjdAIaNDYaGNOJVsaPA' };
+
+var $ = function (s) { return document.querySelector(s); };
+var state = { events: [], selected: null, shownAt: Date.now() };
+var WD = ['日', '月', '火', '水', '木', '金', '土'];
+
+document.getElementById('brand').textContent = CONFIG.BRAND;
+document.getElementById('brand2').textContent = CONFIG.BRAND;
+document.title = CONFIG.BRAND + ' 申込';
+
+function show(id) {
+  ['view-list', 'view-form', 'view-done', 'view-cancel'].forEach(function (v) {
+    document.getElementById(v).classList.toggle('hidden', v !== id);
+  });
+  window.scrollTo(0, 0);
+}
+function parseDT(s) { // "yyyy-MM-ddTHH:mm" を端末のタイムゾーンに依らず分解する
+  var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!m) return null;
+  return { y: +m[1], mo: +m[2], d: +m[3], h: +m[4], mi: +m[5], wd: new Date(+m[1], +m[2] - 1, +m[3]).getDay() };
+}
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function fmtDate(ev) {
+  var a = parseDT(ev.start), b = parseDT(ev.end);
+  if (!a) return '';
+  var s = a.y + '年' + a.mo + '月' + a.d + '日（' + WD[a.wd] + '）' + pad(a.h) + ':' + pad(a.mi);
+  if (b) s += '〜' + pad(b.h) + ':' + pad(b.mi);
+  return s;
+}
+function yen(n) { return String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '円'; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+function api(params) {
+  var u = CONFIG.ENDPOINT + (CONFIG.ENDPOINT.indexOf('?') >= 0 ? '&' : '?') + params;
+  return fetch(u, { method: 'GET', redirect: 'follow' }).then(function (r) { return r.json(); });
+}
+function post(body) {
+  return fetch(CONFIG.ENDPOINT, { method: 'POST', redirect: 'follow', body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+}
+
+/* ---------------- 一覧 */
+function seatLabel(ev) {
+  if (ev.status !== 'open') return { text: '受付終了', cls: 'none', can: false, wait: false };
+  if (ev.remaining > 0) return { text: '残り ' + ev.remaining + ' 名（定員 ' + ev.capacity + ' 名）', cls: '', can: true, wait: false };
+  return { text: '満員。キャンセル待ちを受け付けています' + (ev.waitlist ? '（現在 ' + ev.waitlist + ' 名）' : ''), cls: '', can: true, wait: true };
+}
+function renderEvents() {
+  var box = $('#events');
+  if (!state.events.length) {
+    box.innerHTML = '<div class="card">現在、<wbr>受付中の<wbr>開催は<wbr>ありません。<wbr>決まり<wbr>次第ここに<wbr>掲載します。</div>';
+    return;
+  }
+  box.innerHTML = state.events.map(function (ev) {
+    var s = seatLabel(ev);
+    return '<div class="card ev">' +
+      '<div>' +
+        '<div class="date">' + esc(fmtDate(ev)) + '</div>' +
+        '<div class="meta">' +
+          '<div>会場：' + (ev.venueUrl ? '<a href="' + esc(ev.venueUrl) + '" target="_blank" rel="noopener">' + esc(ev.venue) + '</a>' : esc(ev.venue)) + '</div>' +
+          '<div>参加費：' + esc(yen(ev.fee)) + (ev.feeNote ? '（' + esc(ev.feeNote) + '）' : '') + (ev.payNote ? '　' + esc(ev.payNote) : '') + '</div>' +
+        '</div>' +
+        '<div class="seat ' + s.cls + '">' + esc(s.text) + '</div>' +
+        (ev.note ? '<div class="note">' + esc(ev.note) + '</div>' : '') +
+      '</div>' +
+      '<div>' + (s.can ? '<button class="btn' + (s.wait ? ' sub' : '') + '" data-id="' + esc(ev.id) + '">' + (s.wait ? 'キャンセル待ちで申し込む' : '申し込む') + '</button>' : '') + '</div>' +
+    '</div>';
+  }).join('');
+  box.querySelectorAll('button[data-id]').forEach(function (b) {
+    b.addEventListener('click', function () { openForm(b.getAttribute('data-id')); });
+  });
+}
+function loadEvents() {
+  api('a=events').then(function (r) {
+    if (!r.ok) throw new Error(r.error || 'server');
+    state.events = r.events || [];
+    if (r.brand) { CONFIG.BRAND = r.brand; document.getElementById('brand').textContent = r.brand; document.getElementById('brand2').textContent = r.brand; document.title = r.brand + ' 申込'; }
+    renderEvents();
+  }).catch(function () {
+    $('#events').innerHTML = '<div class="msg err">開催予定を<wbr>読み込めませんでした。<wbr>時間を<wbr>おいて<wbr>再読み込みして<wbr>ください。</div>';
+  });
+}
+
+/* ---------------- 申込 */
+function openForm(id) {
+  var ev = state.events.filter(function (e) { return e.id === id; })[0];
+  if (!ev) return;
+  state.selected = ev;
+  state.shownAt = Date.now();
+  var s = seatLabel(ev);
+  $('#f-sum').innerHTML = '<b>' + esc(fmtDate(ev)) + '</b>' + esc(ev.venue) + '　参加費 ' + esc(yen(ev.fee)) + (ev.feeNote ? '（' + esc(ev.feeNote) + '）' : '') +
+    (s.wait ? '<div class="small" style="color:var(--warn-ink)">満員の<wbr>ためキャンセル待ちでの<wbr>受付です。<wbr>空きが<wbr>出たら<wbr>メールで<wbr>連絡します。</div>' : '');
+  $('#f-msg').innerHTML = '';
+  $('#f-submit').textContent = s.wait ? 'キャンセル待ちで申し込む' : 'この内容で申し込む';
+  show('view-form');
+}
+var ERR = {
+  name_required: 'お名前を入力してください。',
+  email_invalid: 'メールアドレスの形式を確認してください。',
+  level_required: '経験を選んでください。',
+  consent_required: '確認事項への同意が必要です。',
+  event_closed: 'この回は受付を終了しました。',
+  event_past: 'この回は終了しています。',
+  event_not_found: 'この回は見つかりませんでした。一覧を再読み込みしてください。',
+  duplicate: 'このメールアドレスでは、この回にすでに申し込みがあります。受付メールを確認してください。',
+  server: '送信できませんでした。時間をおいてもう一度お試しください。'
+};
+function msg(cls, text) { $('#f-msg').innerHTML = '<div class="msg ' + cls + '">' + esc(text) + '</div>'; }
+function checked(name) { var el = document.querySelector('input[name=' + name + ']:checked'); return el ? el.value : ''; }
+
+$('#form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var ev = state.selected;
+  if (!ev) return;
+  var name = $('#f-name').value.trim();
+  var email = $('#f-email').value.trim();
+  var level = checked('level');
+  if (!name) return msg('err', ERR.name_required);
+  if (!level) return msg('err', ERR.level_required);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg('err', ERR.email_invalid);
+  if (!$('#f-consent').checked) return msg('err', ERR.consent_required);
+
+  var btn = $('#f-submit');
+  btn.disabled = true; btn.textContent = '送信しています…';
+  msg('warn', '送信中です。画面を閉じないでください。');
+  post({
+    a: 'apply', k: CONFIG.KEY, hp: document.querySelector('input[name=company]').value,
+    t: Math.round((Date.now() - state.shownAt) / 1000),
+    event_id: ev.id, name: name, gender: checked('gender'), level: level, email: email,
+    tel: $('#f-tel').value.trim(), note: $('#f-note').value.trim(),
+    consent: true, photo_ok: $('#f-photo').checked, ua: navigator.userAgent
+  }).then(function (r) {
+    if (!r.ok) throw new Error(r.error || 'server');
+    if (!r.no) throw new Error('server'); // スパム判定で落ちた場合は {ok:true} だけが返る。人には「送れなかった」と見せて再送を促す
+    $('#d-title').textContent = r.status === 'waitlist' ? 'キャンセル待ちで受け付けました' : 'お申込みを受け付けました';
+    $('#d-no').textContent = r.no;
+    $('#d-body').innerHTML = '<div>' + esc(fmtDate(ev)) + '</div><div>' + esc(ev.venue) + '</div><div>参加費 ' + esc(yen(ev.fee)) + (ev.payNote ? '　' + esc(ev.payNote) : '') + '</div>' +
+      (r.status === 'waitlist' ? '<div class="msg ok">空きが<wbr>出たら、<wbr>受付順に<wbr>メールで<wbr>連絡します。<wbr>連絡が<wbr>届いた<wbr>時点で<wbr>参加確定です。</div>' : '<div class="msg ok">参加確定です。<wbr>前日に<wbr>リマインドの<wbr>メールを<wbr>送ります。</div>');
+    $('#form').reset();
+    show('view-done');
+    loadEvents();
+  }).catch(function (err) {
+    msg('err', ERR[err.message] || ERR.server);
+  }).finally(function () {
+    btn.disabled = false; btn.textContent = 'この内容で申し込む';
+  });
+});
+$('#f-back').addEventListener('click', function (e) { e.preventDefault(); show('view-list'); });
+$('#d-back').addEventListener('click', function (e) { e.preventDefault(); show('view-list'); });
+
+/* ---------------- キャンセル（?cancel=TOKEN） */
+function openCancel(token) {
+  show('view-cancel');
+  api('a=booking&t=' + encodeURIComponent(token)).then(function (r) {
+    var card = $('#c-card');
+    if (!r.ok) { card.innerHTML = '<div class="msg err">お申込みが<wbr>見つかりませんでした。<wbr>URLが<wbr>途中で<wbr>切れていないか<wbr>確認して<wbr>ください。</div>'; return; }
+    var b = r.booking, ev = r.event;
+    if (b.status === 'cancelled') { card.innerHTML = '<div class="msg ok">申込番号 ' + esc(b.no) + ' は、<wbr>すでに<wbr>キャンセル済みです。</div>'; return; }
+    card.innerHTML =
+      '<div class="small">申込番号</div><div class="no">' + esc(b.no) + '</div>' +
+      '<div>' + esc(b.name) + ' 様　' + (b.status === 'waitlist' ? '（キャンセル待ち）' : '（参加確定）') + '</div>' +
+      (ev ? '<div>' + esc(fmtDate(ev)) + '</div><div>' + esc(ev.venue) + '</div>' + (ev.cancelNote ? '<div class="msg warn">' + esc(ev.cancelNote) + '</div>' : '') : '') +
+      '<div id="c-msg"></div>' +
+      '<button class="btn block" id="c-do">この<wbr>申込を<wbr>キャンセルする</button>';
+    $('#c-do').addEventListener('click', function () {
+      var btn = $('#c-do'); btn.disabled = true; btn.textContent = '処理しています…';
+      post({ a: 'cancel', t: token }).then(function (r2) {
+        if (!r2.ok) throw new Error(r2.error || 'server');
+        card.innerHTML = '<div class="msg ok">申込番号 ' + esc(r2.no) + ' を<wbr>キャンセルしました。<wbr>確認の<wbr>メールを<wbr>送りました。</div>';
+      }).catch(function (err) {
+        $('#c-msg').innerHTML = '<div class="msg err">' + esc(err.message === 'event_past' ? 'この回は終了しているためキャンセルできません。' : 'キャンセルできませんでした。時間をおいてもう一度お試しください。') + '</div>';
+        btn.disabled = false; btn.textContent = 'この申込をキャンセルする';
+      });
+    });
+  }).catch(function () {
+    $('#c-card').innerHTML = '<div class="msg err">読み込めませんでした。<wbr>時間を<wbr>おいて<wbr>再読み込みして<wbr>ください。</div>';
+  });
+}
+
+/* ---------------- 起動 */
+(function () {
+  var m = location.search.match(/[?&]cancel=([A-Za-z0-9]+)/);
+  if (m) { openCancel(m[1]); } else { show('view-list'); }
+  loadEvents();
+})();
+</script>
+</body>
+</html>
