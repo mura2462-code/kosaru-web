@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>フラサル 管理</title>
+<style>
+:root{
+  --bg:#f4f6f5; --card:#fff; --ink:#1c2420; --muted:#5d6b64; --line:#d9e0dc;
+  --green:#13704a; --green-dark:#0a3a24; --ok-bg:#e8f5ee;
+  --warn-bg:#fdf1e3; --warn-ink:#7a3b00; --err-bg:#fbeaea; --err-ink:#8a1c1c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:860px;margin:0 auto;padding:16px}
+header{background:var(--green);color:#fff;padding:14px 0}
+header .wrap{padding-top:0;padding-bottom:0;display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font-size:18px;margin:0}
+h2{font-size:16px;margin:24px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:0 0 12px}
+.btn{border:0;border-radius:8px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;background:var(--green);color:#fff;min-height:44px}
+.btn:disabled{background:#9aa6a0;cursor:default}
+.btn.sub{background:#fff;color:var(--green);border:2px solid var(--green)}
+.btn.sm{padding:6px 10px;font-size:14px;min-height:36px}
+.btn.gray{background:#fff;color:var(--muted);border:1px solid var(--line)}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:16px;font-family:inherit;background:#fff;color:inherit}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+.msg{border-radius:8px;padding:10px 12px;margin:10px 0;font-size:14px}
+.msg.err{background:var(--err-bg);color:var(--err-ink);border:1px solid #e3b1b1}
+.msg.ok{background:var(--ok-bg);color:var(--green-dark);border:1px solid #b6d9c4}
+.msg.warn{background:var(--warn-bg);color:var(--warn-ink);border:1px solid #efc89e}
+.small{font-size:13px;color:var(--muted)}
+.hidden{display:none!important}
+.sum{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;margin:6px 0 0}
+.sum b{font-size:20px;display:block;line-height:1.2}
+.p{border-top:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:start}
+.p:first-of-type{border-top:0}
+.p .nm{font-weight:700}
+.p .sub2{font-size:13px;color:var(--muted)}
+.tag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:1px}
+.tag.c{background:var(--ok-bg);color:var(--green-dark)}
+.tag.w{background:var(--warn-bg);color:var(--warn-ink)}
+.tag.x{background:#eceeed;color:var(--muted)}
+.done{background:var(--ok-bg)}
+.acts{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+pre{white-space:pre-wrap;word-break:break-word;font-size:13px;background:#f7f9f8;border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0}
+a{color:var(--green)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>フラサル 管理</h1>
+  <button class="btn sm gray hidden" id="logout">鍵を消す</button>
+</div></header>
+
+<main class="wrap">
+  <!-- 鍵 -->
+  <section id="gate">
+    <div class="card">
+      <label for="k">管理キー</label>
+      <input type="password" id="k" autocomplete="off" placeholder="ADMIN_KEY">
+      <p class="small">.env の <code>KOSARU_ADMIN_KEY</code>。この端末にだけ保存され、URLには載りません。</p>
+      <div id="g-msg"></div>
+      <button class="btn" id="g-go">開く</button>
+    </div>
+  </section>
+
+  <!-- 本体 -->
+  <section id="main" class="hidden">
+    <label for="ev">開催回</label>
+    <select id="ev"></select>
+    <div id="ev-sum" class="card hidden"></div>
+    <h2>参加者</h2>
+    <div id="list"><div class="small">読み込んでいます…</div></div>
+    <p class="small" id="sheet"></p>
+  </section>
+</main>
+
+<script>
+var CONFIG = { ENDPOINT: 'https://script.google.com/macros/s/AKfycbwPl-RCT5gUtV-tG6V0JOy8nHOZnk5qdDHA10krh_dpPcoUvBZa_f2oia-cwyvHZ8se/exec' };
+var $ = function (s) { return document.querySelector(s); };
+var KEYSTORE = 'furasal.adminkey';
+var state = { key: '', events: [], roster: null };
+var WD = ['日','月','火','水','木','金','土'];
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function yen(n){return String(Math.round(Number(n)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,',')+'円';}
+function pad(n){return (n<10?'0':'')+n;}
+function fmtDate(ev){
+  var m=String(ev.start||'').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if(!m) return ev.id;
+  var wd=new Date(+m[1],+m[2]-1,+m[3]).getDay();
+  return +m[2]+'/'+ +m[3]+'（'+WD[wd]+'）'+m[4]+':'+m[5];
+}
+function api(params){
+  var u=CONFIG.ENDPOINT+(CONFIG.ENDPOINT.indexOf('?')>=0?'&':'?')+'a=admin&k='+encodeURIComponent(state.key)+'&'+params;
+  return fetch(u,{method:'GET',redirect:'follow'}).then(function(r){return r.json();});
+}
+function readKey(){ try{return localStorage.getItem(KEYSTORE)||'';}catch(e){return '';} }
+function saveKey(v){ try{localStorage.setItem(KEYSTORE,v);}catch(e){} }
+function dropKey(){ try{localStorage.removeItem(KEYSTORE);}catch(e){} }
+
+/* ---------------- 認証 */
+function enter(key){
+  state.key=key;
+  return api('op=stat').then(function(r){
+    if(!r.ok) throw new Error(r.error||'server');
+    saveKey(key);
+    $('#gate').classList.add('hidden');
+    $('#main').classList.remove('hidden');
+    $('#logout').classList.remove('hidden');
+    if(r.sheetUrl) $('#sheet').innerHTML='<a href="'+esc(r.sheetUrl)+'" target="_blank" rel="noopener">台帳スプレッドシートを開く</a>';
+    return loadEvents();
+  });
+}
+$('#g-go').addEventListener('click',function(){
+  var v=$('#k').value.trim();
+  if(!v){ $('#g-msg').innerHTML='<div class="msg err">管理キーを入れてください。</div>'; return; }
+  var b=$('#g-go'); b.disabled=true; b.textContent='確認しています…';
+  enter(v).catch(function(err){
+    state.key='';
+    $('#g-msg').innerHTML='<div class="msg err">'+esc(err.message==='forbidden'?'この管理キーでは開けません。':'つながりませんでした。時間をおいてお試しください。')+'</div>';
+  }).finally(function(){ b.disabled=false; b.textContent='開く'; });
+});
+$('#k').addEventListener('keydown',function(e){ if(e.key==='Enter') $('#g-go').click(); });
+$('#logout').addEventListener('click',function(){ dropKey(); location.reload(); });
+
+/* ---------------- 開催回 */
+function loadEvents(){
+  return api('op=events').then(function(r){
+    if(!r.ok) throw new Error(r.error||'server');
+    state.events=r.events||[];
+    var sel=$('#ev');
+    sel.innerHTML=state.events.map(function(ev){
+      return '<option value="'+esc(ev.id)+'">'+esc(fmtDate(ev))+' '+esc(ev.venue)+(ev.past?'（終了）':'')+' ／ '+ev.confirmed+'人</option>';
+    }).join('');
+    // 既定は「終了していない一番近い回」
+    var next=state.events.filter(function(e){return !e.past;}).pop();
+    if(next) sel.value=next.id;
+    if(state.events.length) loadRoster(sel.value);
+    else $('#list').innerHTML='<div class="card small">開催回がありません。</div>';
+  });
+}
+$('#ev').addEventListener('change',function(){ loadRoster($('#ev').value); });
+
+/* ---------------- 名簿 */
+function loadRoster(id){
+  $('#list').innerHTML='<div class="small">読み込んでいます…</div>';
+  return api('op=roster&id='+encodeURIComponent(id)).then(function(r){
+    if(!r.ok) throw new Error(r.error||'server');
+    state.roster=r;
+    renderSum(r);
+    renderList(r);
+  }).catch(function(err){
+    $('#list').innerHTML='<div class="msg err">'+esc(err.message==='forbidden'?'管理キーが通りません。':'読み込めませんでした。')+'</div>';
+  });
+}
+function renderSum(r){
+  var ev=r.eventDetail||{}, c=r.counts||{};
+  var checked=(r.list||[]).filter(function(b){return b.status==='confirmed'&&b.checkedIn;}).length;
+  var money=(r.list||[]).filter(function(b){return b.status==='confirmed';})
+    .reduce(function(a,b){return a+(Number(b.amount)||0);},0);
+  $('#ev-sum').classList.remove('hidden');
+  $('#ev-sum').innerHTML=
+    '<div>'+esc(r.event||'')+'</div>'+
+    '<div class="sum">'+
+      '<div>確定<b>'+(c.confirmed||0)+' / '+(ev.capacity||0)+'</b></div>'+
+      '<div>キャンセル待ち<b>'+(c.waitlist||0)+'</b></div>'+
+      '<div>キャンセル<b>'+(c.cancelled||0)+'</b></div>'+
+      '<div>受付済み<b>'+checked+'</b></div>'+
+      '<div>参加費の合計<b>'+esc(yen(money))+'</b></div>'+
+    '</div>';
+}
+function tagOf(st){
+  if(st==='confirmed') return '<span class="tag c">確定</span>';
+  if(st==='waitlist') return '<span class="tag w">待ち</span>';
+  return '<span class="tag x">キャンセル</span>';
+}
+function renderList(r){
+  var list=r.list||[];
+  if(!list.length){ $('#list').innerHTML='<div class="card small">申込はまだありません。</div>'; return; }
+  $('#list').innerHTML='<div class="card">'+list.map(function(b){
+    var sub=[b.gender,b.level,b.tel,b.email].filter(Boolean).join('　');
+    var acts='';
+    if(b.status==='confirmed'){
+      acts+='<button class="btn sm '+(b.checkedIn?'gray':'')+'" data-checkin="'+esc(b.no)+'" data-on="'+(b.checkedIn?'0':'1')+'">'+(b.checkedIn?'受付を取消':'受付する')+'</button>';
+      acts+= b.billed
+        ? '<span class="small">請求済み</span>'
+        : '<button class="btn sm sub" data-fee="'+esc(b.no)+'">キャンセル料</button>';
+    }
+    return '<div class="p'+(b.checkedIn?' done':'')+'">'+
+      '<div>'+
+        '<div class="nm">'+esc(b.name)+tagOf(b.status)+'</div>'+
+        '<div class="sub2">'+esc(b.no)+'　'+esc(yen(b.amount))+'</div>'+
+        (sub?'<div class="sub2">'+esc(sub)+'</div>':'')+
+        (b.note?'<div class="sub2">備考：'+esc(b.note)+'</div>':'')+
+        (b.checkedIn?'<div class="sub2">受付 '+esc(b.checkedIn)+'</div>':'')+
+        (b.billed?'<div class="sub2">請求 '+esc(b.billed)+'</div>':'')+
+        '<div id="m-'+esc(b.no)+'"></div>'+
+      '</div>'+
+      '<div class="acts">'+acts+'</div>'+
+    '</div>';
+  }).join('')+'</div>';
+
+  $('#list').querySelectorAll('button[data-checkin]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var no=btn.getAttribute('data-checkin'), on=btn.getAttribute('data-on');
+      btn.disabled=true;
+      api('op=checkin&no='+encodeURIComponent(no)+'&v='+on).then(function(r2){
+        if(!r2.ok) throw new Error(r2.error||'server');
+        loadRoster($('#ev').value);
+      }).catch(function(){
+        btn.disabled=false;
+        $('#m-'+no).innerHTML='<div class="msg err">受付を記録できませんでした。</div>';
+      });
+    });
+  });
+  $('#list').querySelectorAll('button[data-fee]').forEach(function(btn){
+    btn.addEventListener('click',function(){ feePanel(btn.getAttribute('data-fee')); });
+  });
+}
+
+/* ---------------- キャンセル料の請求（文面を見てから送る） */
+function feePanel(no){
+  var box=$('#m-'+no);
+  box.innerHTML=
+    '<div class="msg warn">開始2時間前<wbr>以降の<wbr>キャンセル・無断不参加だけが対象です。</div>'+
+    '<label for="u-'+esc(no)+'">Squareの支払いリンク</label>'+
+    '<input id="u-'+esc(no)+'" placeholder="https://square.link/u/..." autocomplete="off">'+
+    '<div id="fm-'+esc(no)+'"></div>'+
+    '<div class="acts" style="margin-top:8px">'+
+      '<button class="btn sm sub" data-dry="'+esc(no)+'">文面を確認する</button>'+
+      '<button class="btn sm gray" data-close="'+esc(no)+'">やめる</button>'+
+    '</div>';
+  box.querySelector('[data-close]').addEventListener('click',function(){ box.innerHTML=''; });
+  box.querySelector('[data-dry]').addEventListener('click',function(){
+    var url=$('#u-'+no).value.trim();
+    if(!/^https:\/\/(square\.link|checkout\.square\.site)\//.test(url)){
+      $('#fm-'+no).innerHTML='<div class="msg err">SquareのURL（https://square.link/ または https://checkout.square.site/）を入れてください。</div>';
+      return;
+    }
+    api('op=late_fee&no='+encodeURIComponent(no)+'&url='+encodeURIComponent(url)).then(function(r2){
+      if(!r2.ok) throw new Error(r2.error||'server');
+      $('#fm-'+no).innerHTML='<div class="small">この内容で送ります（宛名は実名で送られます）</div><pre>'+esc(r2.subject)+'\n\n'+esc(r2.body)+'</pre>'+
+        '<button class="btn sm" id="send-'+esc(no)+'">この内容で送る</button>';
+      $('#send-'+no).addEventListener('click',function(){
+        var sb=$('#send-'+no); sb.disabled=true; sb.textContent='送っています…';
+        api('op=late_fee&no='+encodeURIComponent(no)+'&url='+encodeURIComponent(url)+'&send=1').then(function(r3){
+          if(!r3.ok) throw new Error(r3.error||'server');
+          loadRoster($('#ev').value);
+        }).catch(function(err){
+          sb.disabled=false; sb.textContent='この内容で送る';
+          $('#fm-'+no).innerHTML='<div class="msg err">'+esc(feeErr(err.message))+'</div>';
+        });
+      });
+    }).catch(function(err){
+      $('#fm-'+no).innerHTML='<div class="msg err">'+esc(feeErr(err.message))+'</div>';
+    });
+  });
+}
+function feeErr(code){
+  return ({
+    not_confirmed:'参加確定の人にだけ請求できます。',
+    already_billed:'この申込にはすでに請求を送っています。',
+    bad_url:'SquareのURLではありません。',
+    not_found:'この申込番号が見つかりません。'
+  })[code]||'送れませんでした。時間をおいてお試しください。';
+}
+
+/* ---------------- 起動 */
+(function(){
+  var k=readKey();
+  if(k) enter(k).catch(function(){ dropKey(); });
+})();
+</script>
+</body>
+</html>
+
