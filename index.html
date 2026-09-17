@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>ゼロサル｜江東・江戸川の個人参加フットサル（個サル）</title>
-<meta name="description" content="一人で参加できるフットサルです。当日その場でチームを分けて試合を回します。経験の有無は問いません。男性2,000円／女性1,500円・当日現金。">
+<title>フラサル｜江東・江戸川の個人参加フットサル（個サル）</title>
+<meta name="description" content="一人で参加できるフットサルです。当日その場でチームを分けて試合を回します。経験の有無は問いません。男性2,000円／女性1,500円・当日会場で現金またはキャッシュレス決済。">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="ゼロサル">
-<meta property="og:title" content="ゼロサル｜経験ゼロOKの個サル（江東・江戸川）">
-<meta property="og:description" content="一人で参加できるフットサルです。当日その場でチームを分けて試合を回します。経験の有無は問いません。男性2,000円／女性1,500円・当日現金。">
+<meta property="og:site_name" content="フラサル">
+<meta property="og:title" content="フラサル｜一人で参加できる個サル（江東・江戸川）">
+<meta property="og:description" content="一人で参加できるフットサルです。当日その場でチームを分けて試合を回します。経験の有無は問いません。男性2,000円／女性1,500円・当日会場で現金またはキャッシュレス決済。">
 <meta property="og:url" content="https://mura2462-code.github.io/kosaru-web/">
 <meta name="twitter:card" content="summary">
 <style>
@@ -142,6 +142,14 @@ textarea{min-height:88px;resize:vertical}
 .sum{background:var(--ok-bg);border-radius:8px;padding:12px 14px;margin:0 0 6px;font-size:15px}
 .sum b{display:block;font-size:17px}
 .no{font-size:26px;font-weight:700;letter-spacing:.02em;margin:6px 0}
+.mine{display:inline-block;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;margin-bottom:6px;background:var(--ok-bg);color:var(--green-dark);border:1px solid #b6d9c4}
+.mine.wait{background:var(--warn-bg);color:var(--warn-ink);border-color:#efc89e}
+.lookup{margin-top:20px}
+.lookup .row{display:flex;gap:8px;flex-wrap:wrap}
+.lookup input{flex:1 1 220px;min-width:0}
+.dl{margin:0;font-size:15px}
+.dl dt{color:var(--muted);font-size:13px;margin-top:8px}
+.dl dd{margin:2px 0 0}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .loading{color:var(--muted);font-size:15px;padding:8px 0}
 .small{font-size:13px;color:var(--muted)}
@@ -151,9 +159,9 @@ footer{max-width:640px;margin:0 auto;padding:0 16px 32px;font-size:13px;color:va
 </head>
 <body>
 <header><div class="in">
-  <h1 id="brand">ゼロサル</h1>
+  <h1 id="brand">フラサル</h1>
   <p>ひとりでも<wbr>参加できる<wbr>フットサルです。<wbr>当日<wbr>その場で<wbr>チームを<wbr>分けて、<wbr>試合を<wbr>回します。<wbr>経験の<wbr>有無は<wbr>問いません。</p>
-  <p class="lead-fee">参加費：男性<wbr><span class="jp-nowrap">2,000円</span>／<wbr>女性<wbr><span class="jp-nowrap">1,500円</span><wbr>（当日現金）</p>
+  <p class="lead-fee">参加費：男性<wbr><span class="jp-nowrap">2,000円</span>／<wbr>女性<wbr><span class="jp-nowrap">1,500円</span><wbr>（当日会場で<wbr>お支払い）</p>
 </div></header>
 
 <main>
@@ -162,6 +170,16 @@ footer{max-width:640px;margin:0 auto;padding:0 16px 32px;font-size:13px;color:va
     <h2>開催予定</h2>
     <div id="events"><div class="loading">開催予定を<wbr>読み込んでいます…</div></div>
     <p class="small">申込後に<wbr>届く<wbr>メールから、<wbr>開催前なら<wbr>いつでも<wbr>キャンセル<wbr>できます。</p>
+
+    <div class="card lookup">
+      <h3 style="margin:0 0 6px;font-size:16px">お申込みの<wbr>確認</h3>
+      <p class="small" style="margin:0 0 10px">受付メールが<wbr>見つからないときは、<wbr>申込に<wbr>使った<wbr>メールアドレスを<wbr>入れてください。<wbr>控えを<wbr>もう<wbr>一度<wbr>お送りします。</p>
+      <div class="row">
+        <input type="email" id="lk-email" placeholder="申込に使ったメールアドレス" autocomplete="email" inputmode="email">
+        <button class="btn sub" id="lk-send">控えを<wbr>送る</button>
+      </div>
+      <div id="lk-msg"></div>
+    </div>
   </section>
 
   <!-- 申込フォーム -->
@@ -187,7 +205,7 @@ footer{max-width:640px;margin:0 auto;padding:0 16px 32px;font-size:13px;color:va
         <label><input type="radio" name="level" value="casual">エンジョイ<wbr>（たまに<wbr>蹴る）</label>
         <label><input type="radio" name="level" value="experienced">経験者<wbr>（部活・<wbr>サークル・<wbr>チーム歴あり）</label>
       </div>
-      <p class="small">チーム分けの<wbr>参考にします。<wbr>レベルで<wbr>参加を<wbr>お断りする<wbr>ことは<wbr>ありません。</p>
+      <p class="small">チーム分けの<wbr>参考にします。<wbr>レベルで<wbr>参加を<wbr>お断りすることは<wbr>ありません。</p>
 
       <label class="f" for="f-email">メールアドレス<span class="req">必須</span></label>
       <input type="email" id="f-email" name="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="受付メールとキャンセル用URLを送ります">
@@ -203,14 +221,14 @@ footer{max-width:640px;margin:0 auto;padding:0 16px 32px;font-size:13px;color:va
         <ol>
           <li>フットサルは<wbr>接触や<wbr>転倒を<wbr>伴う<wbr>運動です。<wbr>自身の<wbr>体調・<wbr>体力を<wbr>確認したうえで<wbr>参加します。</li>
           <li>参加中の<wbr>怪我・<wbr>事故・<wbr>体調不良に<wbr>ついては、<wbr>主催者の<wbr>故意または<wbr>重大な<wbr>過失に<wbr>よる<wbr>場合を<wbr>除き、<wbr>自身の<wbr>責任で<wbr>対処します。<wbr>必要に<wbr>応じて<wbr>自身で<wbr>保険に<wbr>加入します。</li>
-          <li>施設の<wbr>利用規則および主催者の<wbr>指示に<wbr>従います。<wbr>危険な<wbr>プレー・<wbr>暴言・<wbr>他の<wbr>参加者への<wbr>迷惑行為が<wbr>あった<wbr>場合は<wbr>退場を<wbr>お願いする<wbr>ことが<wbr>あり、<wbr>その<wbr>際の<wbr>参加費は<wbr>返金しません。</li>
-          <li>貴重品は<wbr>各自で<wbr>管理します。<wbr>盗難・<wbr>紛失に<wbr>ついて<wbr>主催者は<wbr>責任を<wbr>負いません。</li>
-          <li>参加費<wbr>（男性<wbr><span class="jp-nowrap">2,000円</span>／<wbr>女性<wbr><span class="jp-nowrap">1,500円</span>）<wbr>は<wbr>当日、<wbr>会場で<wbr>現金で<wbr>支払います。<wbr>参加者が<wbr>少ない<wbr>場合は<wbr>開催を<wbr>中止する<wbr>ことが<wbr>あり、<wbr>その<wbr>場合は<wbr>登録した<wbr>メールアドレスへ<wbr>事前に<wbr>連絡します。</li>
+          <li>施設の<wbr>利用規則および<wbr>主催者の<wbr>指示に<wbr>従います。<wbr>危険な<wbr>プレー・<wbr>暴言・<wbr>他の<wbr>参加者への<wbr>迷惑行為が<wbr>あった<wbr>場合は<wbr>退場を<wbr>お願いすることが<wbr>あり、<wbr>その<wbr>際の<wbr>参加費は<wbr>返金しません。</li>
+          <li>貴重品は<wbr>各自で<wbr>管理します。<wbr>盗難・<wbr>紛失について<wbr>主催者は<wbr>責任を<wbr>負いません。</li>
+          <li>参加費<wbr>（男性<wbr><span class="jp-nowrap">2,000円</span>／<wbr>女性<wbr><span class="jp-nowrap">1,500円</span>）<wbr>は<wbr>当日、<wbr>会場で<wbr>現金で<wbr>支払います。<wbr>参加者が<wbr>少ない<wbr>場合は<wbr>開催を<wbr>中止することが<wbr>あり、<wbr>その<wbr>場合は<wbr>登録した<wbr>メールアドレスへ<wbr>事前に<wbr>連絡します。</li>
           <li>入力した<wbr>個人情報は、<wbr>本イベントの<wbr>運営連絡<wbr>（受付・<wbr>リマインド・<wbr>中止連絡）<wbr>にのみ<wbr>使い、<wbr>第三者には<wbr>提供しません。</li>
         </ol>
       </div>
       <label class="agree"><input type="checkbox" id="f-consent"><span>上の<wbr>確認事項を<wbr>読み、<wbr>同意します</span></label>
-      <label class="agree"><input type="checkbox" id="f-photo"><span>活動中の<wbr>写真・<wbr>動画を、<wbr>告知<wbr>（掲示板や<wbr>SNS）<wbr>に<wbr>使ってよい<span class="small">（任意。<wbr>顔が<wbr>大きく<wbr>写る<wbr>ものは<wbr>使いません）</span></span></label>
+      <label class="agree"><input type="checkbox" id="f-photo"><span>活動中の<wbr>写真・<wbr>動画を、<wbr>告知<wbr>（掲示板や<wbr>SNS）<wbr>に<wbr>使ってよい<span class="small">（任意。<wbr>顔が<wbr>大きく<wbr>写るものは<wbr>使いません）</span></span></label>
 
       <div id="f-msg"></div>
       <button type="submit" class="btn block" id="f-submit">この<wbr>内容で<wbr>申し込む</button>
@@ -225,25 +243,43 @@ footer{max-width:640px;margin:0 auto;padding:0 16px 32px;font-size:13px;color:va
       <div class="small">申込番号</div>
       <div class="no" id="d-no"></div>
       <div id="d-body"></div>
-      <div class="msg warn">受付メールを<wbr>送りました。<wbr>届かない<wbr>場合は、<wbr>迷惑メールフォルダを<wbr>確認して<wbr>ください。<wbr>キャンセルは<wbr>メール内の<wbr>URLから<wbr>できます。</div>
+      <div class="msg warn">受付メールを<wbr>送りました。<wbr>届かない<wbr>場合は、<wbr>迷惑メールフォルダを<wbr>確認して<wbr>ください。</div>
+      <button class="btn sub block" id="d-view">申込内容を<wbr>見る</button>
     </div>
     <p><a href="#" id="d-back">開催予定にも<wbr>どる</a></p>
   </section>
 
   <!-- キャンセル -->
   <section id="view-cancel" class="hidden">
-    <h2>キャンセル</h2>
+    <h2>お申込みの<wbr>内容</h2>
     <div class="card" id="c-card"><div class="loading">お申込みを<wbr>確認しています…</div></div>
     <p><a href="./" id="c-back">開催予定を<wbr>見る</a></p>
   </section>
 </main>
-<footer><span id="brand2">ゼロサル</span></footer>
+<footer><span id="brand2">フラサル</span></footer>
 
 <script>
-var CONFIG = { BRAND: 'ゼロサル', ENDPOINT: 'https://script.google.com/macros/s/AKfycbwPl-RCT5gUtV-tG6V0JOy8nHOZnk5qdDHA10krh_dpPcoUvBZa_f2oia-cwyvHZ8se/exec', KEY: '1qZcSCIfcLjVZzjdAIaNDYaGNOJVsaPA' };
+var CONFIG = { BRAND: 'フラサル', ENDPOINT: 'https://script.google.com/macros/s/AKfycbwPl-RCT5gUtV-tG6V0JOy8nHOZnk5qdDHA10krh_dpPcoUvBZa_f2oia-cwyvHZ8se/exec', KEY: '1qZcSCIfcLjVZzjdAIaNDYaGNOJVsaPA' };
 
 var $ = function (s) { return document.querySelector(s); };
-var state = { events: [], selected: null, shownAt: Date.now() };
+var state = { events: [], selected: null, shownAt: Date.now(), mine: {} };
+
+/* この端末で申し込んだ回を覚えておく。{開催ID: トークン}。
+   プライベートブラウジングや保存拒否で例外が出ても画面は動くようにする */
+var STORE_KEY = 'furasal.bookings';
+var store = {
+  read: function () {
+    try {
+      var v = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+      return (v && typeof v === 'object') ? v : {};
+    } catch (e) { return {}; }
+  },
+  write: function (v) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(v)); } catch (e) {}
+  },
+  put: function (eventId, token) { var v = this.read(); v[eventId] = token; this.write(v); },
+  drop: function (eventId) { var v = this.read(); delete v[eventId]; this.write(v); }
+};
 var WD = ['日', '月', '火', '水', '木', '金', '土'];
 
 document.getElementById('brand').textContent = CONFIG.BRAND;
@@ -297,8 +333,12 @@ function renderEvents() {
   }
   box.innerHTML = state.events.map(function (ev) {
     var s = seatLabel(ev);
+    var mine = state.mine[ev.id];  // この端末から申し込み済みなら控えを持っている
     return '<div class="card ev">' +
       '<div>' +
+        (mine ? '<div class="mine' + (mine.status === 'waitlist' ? ' wait' : '') + '">' +
+          (mine.status === 'waitlist' ? 'キャンセル待ちで申込済み' : '申込済み（参加確定）') +
+          '　' + esc(mine.no) + '</div>' : '') +
         '<div class="date">' + esc(fmtDate(ev)) + '</div>' +
         '<div class="meta">' +
           '<div>会場：' + (ev.venueUrl ? '<a href="' + esc(ev.venueUrl) + '" target="_blank" rel="noopener">' + escw(ev.venue) + '</a>' : escw(ev.venue)) + '</div>' +
@@ -308,19 +348,45 @@ function renderEvents() {
         '<div class="seat ' + s.cls + '">' + esc(s.text) + '</div>' +
         (ev.note ? '<div class="note">' + escw(ev.note) + '</div>' : '') +
       '</div>' +
-      '<div>' + (s.can ? '<button class="btn' + (s.wait ? ' sub' : '') + '" data-id="' + esc(ev.id) + '">' + (s.wait ? 'キャンセル待ちで申し込む' : '申し込む') + '</button>' : '') + '</div>' +
+      '<div>' + (mine
+        ? '<button class="btn sub" data-view="' + esc(mine.token) + '">申込内容を<wbr>見る</button>'
+        : (s.can ? '<button class="btn' + (s.wait ? ' sub' : '') + '" data-id="' + esc(ev.id) + '">' + (s.wait ? 'キャンセル待ちで申し込む' : '申し込む') + '</button>' : '')) + '</div>' +
     '</div>';
   }).join('');
   box.querySelectorAll('button[data-id]').forEach(function (b) {
     b.addEventListener('click', function () { openForm(b.getAttribute('data-id')); });
   });
+  box.querySelectorAll('button[data-view]').forEach(function (b) {
+    b.addEventListener('click', function () { openBooking(b.getAttribute('data-view')); });
+  });
 }
+/** 端末に残っている控えを台帳と突き合わせる。キャンセル済み・見つからない・終了した回は捨てる */
+function loadMine() {
+  var saved = store.read();
+  var ids = Object.keys(saved);
+  if (!ids.length) { state.mine = {}; return Promise.resolve(); }
+  var live = {};
+  ids.forEach(function (id) {
+    if (!state.events.some(function (ev) { return ev.id === id; })) store.drop(id); // 終わった回
+  });
+  var remain = Object.keys(store.read());
+  return Promise.all(remain.map(function (id) {
+    return api('a=booking&t=' + encodeURIComponent(saved[id])).then(function (r) {
+      if (!r.ok || !r.booking || r.booking.status === 'cancelled') { store.drop(id); return; }
+      live[id] = { no: r.booking.no, status: r.booking.status, token: saved[id] };
+    }).catch(function () {
+      live[id] = { no: '', status: '', token: saved[id] }; // 通信できないだけなら控えは捨てない
+    });
+  })).then(function () { state.mine = live; });
+}
+
 function loadEvents() {
   api('a=events').then(function (r) {
     if (!r.ok) throw new Error(r.error || 'server');
     state.events = r.events || [];
     if (r.brand) { CONFIG.BRAND = r.brand; document.getElementById('brand').textContent = r.brand; document.getElementById('brand2').textContent = r.brand; document.title = r.brand + ' 申込'; }
     renderEvents();
+    loadMine().then(renderEvents);
   }).catch(function () {
     $('#events').innerHTML = '<div class="msg err">開催予定を<wbr>読み込めませんでした。<wbr>時間を<wbr>おいて<wbr>再読み込みして<wbr>ください。</div>';
   });
@@ -334,7 +400,7 @@ function openForm(id) {
   state.shownAt = Date.now();
   var s = seatLabel(ev);
   $('#f-sum').innerHTML = '<b>' + esc(fmtDate(ev)) + '</b>' + escw(ev.venue) + '　参加費 ' + esc(yen(ev.fee)) + (ev.feeNote ? '（' + escw(ev.feeNote) + '）' : '') +
-    (s.wait ? '<div class="small" style="color:var(--warn-ink)">満員の<wbr>ためキャンセル待ちでの<wbr>受付です。<wbr>空きが<wbr>出たら<wbr>メールで<wbr>連絡します。</div>' : '');
+    (s.wait ? '<div class="small" style="color:var(--warn-ink)">満員のため<wbr>キャンセル待ちでの<wbr>受付です。<wbr>空きが<wbr>出たら<wbr>メールで<wbr>連絡します。</div>' : '');
   $('#f-msg').innerHTML = '';
   $('#f-submit').textContent = s.wait ? 'キャンセル待ちで申し込む' : 'この内容で申し込む';
   show('view-form');
@@ -348,6 +414,7 @@ var ERR = {
   event_past: 'この回は終了しています。',
   event_not_found: 'この回は見つかりませんでした。一覧を再読み込みしてください。',
   duplicate: 'このメールアドレスでは、この回にすでに申し込みがあります。受付メールを確認してください。',
+  cancel_closed: 'キャンセルの受付は終了しました（開始2時間前まで）。当日の連絡は受付メールへの返信でお願いします。',
   server: '送信できませんでした。時間をおいてもう一度お試しください。'
 };
 function msg(cls, text) { $('#f-msg').innerHTML = '<div class="msg ' + cls + '">' + esc(text) + '</div>'; }
@@ -377,6 +444,8 @@ $('#form').addEventListener('submit', function (e) {
   }).then(function (r) {
     if (!r.ok) throw new Error(r.error || 'server');
     if (!r.no) throw new Error('server'); // スパム判定で落ちた場合は {ok:true} だけが返る。人には「送れなかった」と見せて再送を促す
+    if (r.token) store.put(ev.id, r.token); // メールを失っても、この端末からは内容を開ける
+    state.lastToken = r.token || '';
     $('#d-title').textContent = r.status === 'waitlist' ? 'キャンセル待ちで受け付けました' : 'お申込みを受け付けました';
     $('#d-no').textContent = r.no;
     $('#d-body').innerHTML = '<div>' + esc(fmtDate(ev)) + '</div><div>' + escw(ev.venue) + '</div><div>参加費 ' + esc(yen(ev.fee)) + '</div>' + (ev.payNote ? '<div>支払い<wbr>：' + escw(ev.payNote) + '</div>' : '') +
@@ -392,29 +461,68 @@ $('#form').addEventListener('submit', function (e) {
 });
 $('#f-back').addEventListener('click', function (e) { e.preventDefault(); show('view-list'); });
 $('#d-back').addEventListener('click', function (e) { e.preventDefault(); show('view-list'); });
+$('#d-view').addEventListener('click', function () { if (state.lastToken) openBooking(state.lastToken); });
 
-/* ---------------- キャンセル（?cancel=TOKEN） */
-function openCancel(token) {
+/* ---------------- 申込内容（?b=TOKEN / 既存メールの ?cancel=TOKEN） */
+var LV = { beginner: '初心者', casual: 'エンジョイ', experienced: '経験者' };
+function row(label, value) {
+  if (!value) return '';
+  return '<dt>' + esc(label) + '</dt><dd>' + escw(value) + '</dd>';
+}
+function openBooking(token) {
   show('view-cancel');
+  $('#c-card').innerHTML = '<div class="loading">お申込みを<wbr>確認しています…</div>';
   api('a=booking&t=' + encodeURIComponent(token)).then(function (r) {
     var card = $('#c-card');
-    if (!r.ok) { card.innerHTML = '<div class="msg err">お申込みが<wbr>見つかりませんでした。<wbr>URLが<wbr>途中で<wbr>切れていないか<wbr>確認して<wbr>ください。</div>'; return; }
+    if (!r.ok) {
+      card.innerHTML = '<div class="msg err">お申込みが<wbr>見つかりませんでした。<wbr>URLが<wbr>途中で<wbr>切れていないか<wbr>確認して<wbr>ください。</div>';
+      return;
+    }
     var b = r.booking, ev = r.event;
-    if (b.status === 'cancelled') { card.innerHTML = '<div class="msg ok">申込番号 ' + esc(b.no) + ' は、<wbr>すでに<wbr>キャンセル済みです。</div>'; return; }
-    card.innerHTML =
+    if (b.status === 'cancelled') {
+      card.innerHTML = '<div class="msg ok">申込番号 ' + esc(b.no) + ' は、<wbr>すでに<wbr>キャンセル済みです。</div>';
+      if (ev) store.drop(ev.id);
+      return;
+    }
+    var badge = '<div class="mine' + (b.status === 'waitlist' ? ' wait' : '') + '">' +
+      (b.status === 'waitlist' ? 'キャンセル待ち' : '参加確定') + '</div>';
+    var body =
+      badge +
       '<div class="small">申込番号</div><div class="no">' + esc(b.no) + '</div>' +
-      '<div>' + esc(b.name) + ' 様　' + (b.status === 'waitlist' ? '（キャンセル待ち）' : '（参加確定）') + '</div>' +
-      (ev ? '<div>' + esc(fmtDate(ev)) + '</div><div>' + escw(ev.venue) + '</div>' + (ev.cancelNote ? '<div class="msg warn">' + escw(ev.cancelNote) + '</div>' : '') : '') +
-      '<div id="c-msg"></div>' +
-      '<button class="btn block" id="c-do">この<wbr>申込を<wbr>キャンセルする</button>';
-    $('#c-do').addEventListener('click', function () {
-      var btn = $('#c-do'); btn.disabled = true; btn.textContent = '処理しています…';
+      '<dl class="dl">' +
+        (ev ? row('日時', fmtDate(ev)) + row('会場', ev.venue) : '') +
+        row('お名前', b.name + ' 様') +
+        row('参加費', b.amount ? yen(b.amount) + (ev && ev.payNote ? '（' + ev.payNote + '）' : '') : '') +
+        row('経験', LV[b.level] || b.level) +
+        row('性別', b.gender) +
+        row('電話', b.tel) +
+        row('写真の掲載', b.photo) +
+        row('備考', b.note) +
+        row('申込日時', b.at) +
+      '</dl>';
+    if (ev && ev.cancelNote) body += '<div class="msg warn">' + escw(ev.cancelNote) + '</div>';
+    body += '<div id="c-msg"></div>';
+    if (b.canCancel) {
+      body += '<button class="btn block" id="c-do">この<wbr>申込を<wbr>キャンセルする</button>';
+      if (b.cancelDeadline) body += '<p class="small">無料で<wbr>キャンセルできるのは ' + esc(b.cancelDeadline) + ' までです。</p>';
+    } else if (b.cancelReason === 'closed') {
+      body += '<div class="msg err">' + esc(ERR.cancel_closed) + '</div>';
+    } else if (b.cancelReason === 'event_past') {
+      body += '<div class="msg ok">この回は<wbr>終了しました。<wbr>ご参加<wbr>ありがとう<wbr>ございました。</div>';
+    }
+    card.innerHTML = body;
+
+    var doBtn = $('#c-do');
+    if (!doBtn) return;
+    doBtn.addEventListener('click', function () {
+      doBtn.disabled = true; doBtn.textContent = '処理しています…';
       post({ a: 'cancel', t: token }).then(function (r2) {
         if (!r2.ok) throw new Error(r2.error || 'server');
+        if (ev) store.drop(ev.id);
         card.innerHTML = '<div class="msg ok">申込番号 ' + esc(r2.no) + ' を<wbr>キャンセルしました。<wbr>確認の<wbr>メールを<wbr>送りました。</div>';
       }).catch(function (err) {
-        $('#c-msg').innerHTML = '<div class="msg err">' + esc(err.message === 'event_past' ? 'この回は終了しているためキャンセルできません。' : 'キャンセルできませんでした。時間をおいてもう一度お試しください。') + '</div>';
-        btn.disabled = false; btn.textContent = 'この申込をキャンセルする';
+        $('#c-msg').innerHTML = '<div class="msg err">' + esc(ERR[err.message] || 'キャンセルできませんでした。時間をおいてもう一度お試しください。') + '</div>';
+        doBtn.disabled = false; doBtn.textContent = 'この申込をキャンセルする';
       });
     });
   }).catch(function () {
@@ -422,10 +530,32 @@ function openCancel(token) {
   });
 }
 
+/* ---------------- 控えの送り直し */
+$('#lk-send').addEventListener('click', function () {
+  var el = $('#lk-email'), email = el.value.trim(), box = $('#lk-msg');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    box.innerHTML = '<div class="msg err">' + esc(ERR.email_invalid) + '</div>';
+    return;
+  }
+  var btn = $('#lk-send');
+  btn.disabled = true; btn.textContent = '送っています…';
+  box.innerHTML = '';
+  post({ a: 'resend', email: email }).then(function (r) {
+    if (!r.ok) throw new Error(r.error || 'server');
+    // 申込の有無は画面に出さない（他人のアドレスで探れてしまうため）
+    box.innerHTML = '<div class="msg ok">お申込みが<wbr>あれば、<wbr>その<wbr>アドレスに<wbr>控えを<wbr>お送りしました。<wbr>数分<wbr>待っても<wbr>届かない<wbr>場合は、<wbr>迷惑メールフォルダも<wbr>確認して<wbr>ください。</div>';
+    el.value = '';
+  }).catch(function (err) {
+    box.innerHTML = '<div class="msg err">' + esc(ERR[err.message] || ERR.server) + '</div>';
+  }).finally(function () {
+    btn.disabled = false; btn.textContent = '控えを送る';
+  });
+});
+
 /* ---------------- 起動 */
 (function () {
-  var m = location.search.match(/[?&]cancel=([A-Za-z0-9]+)/);
-  if (m) { openCancel(m[1]); } else { show('view-list'); }
+  var m = location.search.match(/[?&](?:cancel|b)=([A-Za-z0-9]+)/);
+  if (m) { openBooking(m[1]); } else { show('view-list'); }
   loadEvents();
 })();
 </script>
